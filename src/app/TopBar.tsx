@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { GOOGLE_CLIENT_ID, renderGoogleButton, signOut, type User } from "./auth";
+import { Icon } from "./Icon";
+import { togglePaper, usePaper } from "./paper";
+import { BrandMark } from "./Sketch";
 
 interface Props {
   user: User | null;
@@ -7,11 +10,13 @@ interface Props {
   onHome: () => void;
   onStudio: () => void;
   hasDeck: boolean;
+  view: string;
 }
 
-export function TopBar({ user, onUser, onHome, onStudio, hasDeck }: Props) {
+export function TopBar({ user, onUser, onHome, onStudio, hasDeck, view }: Props) {
   const btn = useRef<HTMLDivElement>(null);
   const [help, setHelp] = useState(false);
+  const paper = usePaper();
 
   useEffect(() => {
     if (!user && btn.current) renderGoogleButton(btn.current, onUser).catch(() => {});
@@ -20,12 +25,20 @@ export function TopBar({ user, onUser, onHome, onStudio, hasDeck }: Props) {
   return (
     <header className="topbar">
       <button className="brand" onClick={onHome}>
-        <span className="brand-mark">🧭</span> MapDeck
+        <BrandMark /> MapDeck
       </button>
       <nav>
-        <button className="link" onClick={onHome}>New / my decks</button>
-        {hasDeck && <button className="link" onClick={onStudio}>Studio</button>}
+        <button className={`link ${view === "home" ? "on" : ""}`} onClick={onHome}>New or saved decks</button>
+        {hasDeck && <button className={`link ${view === "studio" ? "on" : ""}`} onClick={onStudio}>Studio</button>}
       </nav>
+      <button
+        className="icon-btn"
+        onClick={togglePaper}
+        title={`${paper.resolved === "dark" ? "Light" : "Dark"} paper${paper.pref === "auto" ? " (now following your device)" : ""}`}
+        aria-label="Switch light or dark paper"
+      >
+        <Icon name={paper.resolved === "dark" ? "sun" : "moon"} />
+      </button>
       <div className="account">
         {user ? (
           <>

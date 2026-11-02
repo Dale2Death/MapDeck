@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Presentation } from "../core/types";
 import { getStyle } from "../styles";
+import { Icon } from "./Icon";
 import { PlayerView } from "./PlayerView";
 import type { Player } from "../player/player";
 
@@ -99,19 +100,19 @@ export function Presenter() {
           <PlayerView pres={state.pres} onReady={(p) => { preview.current = p; p.go(state.index); }} options={{ controls: false, minimap: true }} />
         </div>
         <div className="pv-controls">
-          <button className="btn ghost" onClick={() => send({ type: "prev" })}>◀ Back</button>
-          <span className="muted">Step {state.index + 1} of {steps.length}</span>
-          <button className="btn" onClick={() => send({ type: "next" })}>Next ▶</button>
+          <button className="btn ghost" onClick={() => send({ type: "prev" })}><Icon name="chevron-left" /> Back</button>
+          <span className="mono">Step {state.index + 1} of {steps.length}</span>
+          <button className="btn" onClick={() => send({ type: "next" })}>Next <Icon name="chevron-right" /></button>
         </div>
       </section>
       <aside className="pv-side">
         <div className="pv-timer">
           <div>
-            <span className="muted small">Elapsed</span>
+            <span className="mono">Elapsed</span>
             <strong>{fmt(elapsed)}</strong>
           </div>
           <div>
-            <span className="muted small">Clock</span>
+            <span className="mono">Clock</span>
             <strong>{now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</strong>
           </div>
           <div className="row">
@@ -120,11 +121,11 @@ export function Presenter() {
           </div>
         </div>
         <div className="pv-notes">
-          <span className="muted small">{slide ? `Now: ${slide.title}` : step?.label ?? "Overview"}</span>
+          <span className="mono">{slide ? `Now: ${slide.title}` : step?.label ?? "Overview"}</span>
           <p>{slide?.notes || (slide ? slide.points.join(" · ") || "No notes for this slide." : "Overview of the whole map.")}</p>
         </div>
         <div className="pv-next">
-          <span className="muted small">Up next</span>
+          <span className="mono">Up next</span>
           <strong>{next?.title ?? "The end"}</strong>
         </div>
       </aside>

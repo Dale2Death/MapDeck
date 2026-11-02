@@ -2,10 +2,14 @@ import { useRef, useState } from "react";
 import { isOriginalOrder, moveSlide, newId, resetOrder } from "../core/deck";
 import { download, exportHtml, safeFileName } from "../core/export";
 import { shareLink } from "../core/share";
-import type { BrandKit, Pace, Presentation, Slide } from "../core/types";
+import type { BrandKit, Pace, Paper, Presentation, Slide, SlideLayout } from "../core/types";
+import { layoutOf } from "../design/classify";
+import { DOODLE_NAMES, pickDoodle } from "../design/doodles";
+import { LAYOUTS } from "../player/card";
 import { THEMES } from "../player/css";
 import type { Player } from "../player/player";
 import { STYLES } from "../styles";
+import { Icon } from "./Icon";
 import { PlayerView } from "./PlayerView";
 import { printPresentation } from "./print";
 import { requestTabCapture } from "./record";
@@ -74,7 +78,7 @@ export function Studio({ pres, onChange, onPresent, onRecord, onQuiz }: Props) {
             {deck.slides.length} slides
             {!isOriginalOrder(deck) && (
               <button className="link small" onClick={() => setDeck(resetOrder(deck))}>
-                ↺ Reset to original order
+                <Icon name="arrow-back-up" size={14} /> Original order
               </button>
             )}
           </div>
@@ -88,7 +92,7 @@ export function Studio({ pres, onChange, onPresent, onRecord, onQuiz }: Props) {
           {deck.slides.map((s, i) => (
             <li
               key={s.id}
-              className={`slide-item ${dropAt === i && dragFrom !== null && dragFrom !== i ? (dragFrom > i ? "drop-before" : "drop-after") : ""} ${dragFrom === i ? "dragging" : ""}`}
+              className={`slide-item ${dropAt === i && dragFrom !== null && dragFrom !== i ? (dragFrom > i ? "drop-before" : "drop-after") : ""} ${dragFrom === i ? "dragging" : ""} ${open === s.id ? "open" : ""}`}
               draggable
               onDragStart={(e) => {
                 setDragFrom(i);
@@ -110,34 +114,55 @@ export function Studio({ pres, onChange, onPresent, onRecord, onQuiz }: Props) {
               }}
             >
               <div className="slide-row" onClick={() => player.current?.goToSlide(s.id)}>
-                <span className="grip" title="Drag to reorder">⋮⋮</span>
+                <span className="grip" title="Drag to reorder"><Icon name="grip-vertical" size={14} /></span>
                 <span className="num" style={{ background: `var(--c${sections.indexOf(s.section) % 5})` }}>{i + 1}</span>
                 <div className="slide-meta">
                   <strong>{s.title || "Untitled"}</strong>
                   <span className="muted small">{s.section}</span>
                 </div>
                 <div className="slide-actions">
-                  <button title="Move up" onClick={(e) => { e.stopPropagation(); move(i, i - 1); }} disabled={i === 0}>↑</button>
-                  <button title="Move down" onClick={(e) => { e.stopPropagation(); move(i, i + 1); }} disabled={i === deck.slides.length - 1}>↓</button>
-                  <button title="Edit" onClick={(e) => { e.stopPropagation(); setOpen(open === s.id ? null : s.id); }}>✎</button>
+                  <button className="icon-btn" title="Move up" onClick={(e) => { e.stopPropagation(); move(i, i - 1); }} disabled={i === 0}><Icon name="arrow-up" size={14} /></button>
+                  <button className="icon-btn" title="Move down" onClick={(e) => { e.stopPropagation(); move(i, i + 1); }} disabled={i === deck.slides.length - 1}><Icon name="arrow-down" size={14} /></button>
+                  <button className="icon-btn" title="Edit" onClick={(e) => { e.stopPropagation(); setOpen(open === s.id ? null : s.id); }}><Icon name="pencil" size={14} /></button>
                 </div>
               </div>
               {open === s.id && (
                 <div className="slide-edit">
                   <label>
-                    Title
+                    <span>Title</span>
                     <input value={s.title} onChange={(e) => updateSlide(s.id, { title: e.target.value })} />
                   </label>
                   <label>
-                    Section / branch
+                    <span>Section / branch</span>
                     <input list="sections" value={s.section} onChange={(e) => updateSlide(s.id, { section: e.target.value })} />
                   </label>
                   <label>
-                    Points (one per line)
+                    <span>Points (one per line)</span>
                     <textarea rows={4} value={s.points.join("\n")} onChange={(e) => updateSlide(s.id, { points: e.target.value.split("\n") })} onBlur={(e) => updateSlide(s.id, { points: e.target.value.split("\n").map((x) => x.trim()).filter(Boolean) })} />
                   </label>
+                  <>
+                    <label>
+                      <span>Layout</span>
+                      <select value={s.layout ?? ""} onChange={(e) => updateSlide(s.id, { layout: (e.target.value || undefined) as SlideLayout | undefined })}>
+                        <option value="">Auto ({LAYOUTS.find((l) => l.id === layoutOf({ ...s, layout: undefined }, i))?.name})</option>
+                        {LAYOUTS.map((l) => (
+                          <option key={l.id} value={l.id} disabled={l.id === "photo" && !s.image}>{l.name}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span>Illustration</span>
+                      <select value={s.doodle ?? ""} onChange={(e) => updateSlide(s.id, { doodle: e.target.value || undefined })}>
+                        <option value="">Auto ({pickDoodle({ ...s, doodle: undefined }, i)?.replace(/-/g, " ")})</option>
+                        <option value="none">None</option>
+                        {DOODLE_NAMES.map((d) => (
+                          <option key={d} value={d}>{d.replace(/-/g, " ")}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
                   <label>
-                    Speaker notes
+                    <span>Speaker notes</span>
                     <textarea rows={3} value={s.notes ?? ""} onChange={(e) => updateSlide(s.id, { notes: e.target.value })} />
                   </label>
                   <div className="row between">
@@ -170,7 +195,7 @@ export function Studio({ pres, onChange, onPresent, onRecord, onQuiz }: Props) {
             setOpen(s.id);
           }}
         >
-          + Add slide
+          <Icon name="plus" size={14} /> Add slide
         </button>
       </aside>
 
@@ -181,7 +206,7 @@ export function Studio({ pres, onChange, onPresent, onRecord, onQuiz }: Props) {
 
       <aside className="settings-panel">
         <button className="btn present-btn" onClick={onPresent}>
-          ▶ Present
+          <Icon name="player-play" /> Present
         </button>
         <div className="tabs" role="tablist">
           {(["look", "brand", "share"] as const).map((t) => (
@@ -197,7 +222,7 @@ export function Studio({ pres, onChange, onPresent, onRecord, onQuiz }: Props) {
             <div className="style-picks">
               {STYLES.map((s) => (
                 <button key={s.id} className={`style-pick ${settings.style === s.id ? "on" : ""}`} onClick={() => setSettings({ style: s.id })}>
-                  <span className="emoji">{s.emoji}</span>
+                  <Icon name={s.icon} size={18} />
                   <span>
                     <strong>{s.name}</strong>
                     <small>{s.tagline}</small>
@@ -206,9 +231,9 @@ export function Studio({ pres, onChange, onPresent, onRecord, onQuiz }: Props) {
               ))}
             </div>
             <button className="link small" onClick={onQuiz}>
-              Not sure? Take the vibe quiz
+              <Icon name="sparkles" size={14} /> Not sure? Let us suggest one
             </button>
-            <h3>Theme</h3>
+            <h3>Inks</h3>
             <div className="themes">
               {THEMES.map((t) => (
                 <button key={t.id} className={`theme ${settings.theme === t.id ? "on" : ""}`} onClick={() => setSettings({ theme: t.id })} title={t.name}>
@@ -218,6 +243,14 @@ export function Studio({ pres, onChange, onPresent, onRecord, onQuiz }: Props) {
                     ))}
                   </span>
                   {t.name}
+                </button>
+              ))}
+            </div>
+            <h3>Paper</h3>
+            <div className="seg">
+              {(["auto", "light", "dark"] as Paper[]).map((p) => (
+                <button key={p} className={(settings.paper ?? "auto") === p ? "on" : ""} onClick={() => setSettings({ paper: p })} title={p === "auto" ? "Follow each viewer's device" : undefined}>
+                  <Icon name={p === "auto" ? "device-desktop" : p === "light" ? "sun" : "moon"} size={14} /> {p}
                 </button>
               ))}
             </div>
@@ -261,17 +294,17 @@ export function Studio({ pres, onChange, onPresent, onRecord, onQuiz }: Props) {
             <h3>Colours</h3>
             <div className="row">
               <label className="color">
-                <input type="color" value={settings.brand?.primary ?? "#f5b942"} onChange={(e) => setBrand({ primary: e.target.value })} />
+                <input type="color" value={settings.brand?.primary ?? "#d9a33f"} onChange={(e) => setBrand({ primary: e.target.value })} />
                 Primary
               </label>
               <label className="color">
-                <input type="color" value={settings.brand?.secondary ?? "#5ad1c9"} onChange={(e) => setBrand({ secondary: e.target.value })} />
+                <input type="color" value={settings.brand?.secondary ?? "#3f6fd1"} onChange={(e) => setBrand({ secondary: e.target.value })} />
                 Secondary
               </label>
             </div>
             <h3>Fonts</h3>
             <label>
-              Headings
+              <span>Headings</span>
               <select value={settings.brand?.headingFont ?? ""} onChange={(e) => setBrand({ headingFont: e.target.value || undefined })}>
                 {FONTS.map((f) => (
                   <option key={f} value={f}>{f || "Theme default"}</option>
@@ -279,7 +312,7 @@ export function Studio({ pres, onChange, onPresent, onRecord, onQuiz }: Props) {
               </select>
             </label>
             <label>
-              Body
+              <span>Body</span>
               <select value={settings.brand?.bodyFont ?? ""} onChange={(e) => setBrand({ bodyFont: e.target.value || undefined })}>
                 {FONTS.map((f) => (
                   <option key={f} value={f}>{f || "Theme default"}</option>
@@ -294,13 +327,13 @@ export function Studio({ pres, onChange, onPresent, onRecord, onQuiz }: Props) {
 
         {tab === "share" && (
           <div className="share">
-            <button className="btn ghost" onClick={doShare}>🔗 Copy share link</button>
+            <button className="btn ghost" onClick={doShare}><Icon name="link" /> Copy share link</button>
             <p className="muted small">The whole presentation lives in the link. No account needed to view it.</p>
-            <button className="btn ghost" onClick={() => download(`${safeFileName(deck.title)}.html`, exportHtml(pres))}>⬇ Download HTML</button>
+            <button className="btn ghost" onClick={() => download(`${safeFileName(deck.title)}.html`, exportHtml(pres))}><Icon name="download" /> Download HTML</button>
             <p className="muted small">One file that plays offline, with images.</p>
-            <button className="btn ghost" onClick={() => printPresentation(pres)}>🖨 Print / save as PDF</button>
+            <button className="btn ghost" onClick={() => printPresentation(pres)}><Icon name="printer" /> Print or save as PDF</button>
             <p className="muted small">Page 1 is the full map, then one page per slide with notes.</p>
-            <button className="btn ghost" onClick={doRecord}>⏺ Record video</button>
+            <button className="btn ghost" onClick={doRecord}><Icon name="player-record" /> Record video</button>
             <p className="muted small">Plays hands-free and records this tab. Choose "This tab" when asked.</p>
           </div>
         )}

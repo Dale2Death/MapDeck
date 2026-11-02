@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { parsePptx } from "../src/import/pptx";
 
 describe("parsePptx", () => {
-  it("reads titles, bullets, notes and images in slide order", async () => {
+  it("reads titles, bullets and notes in slide order, skipping decoration", async () => {
     const buf = readFileSync("tests/fixtures/sample.pptx");
     const d = await parsePptx(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
     expect(d.title).toBe("Fixture Deck");
@@ -11,6 +11,7 @@ describe("parsePptx", () => {
     expect(d.slides[0].points).toEqual(["A subtitle"]);
     expect(d.slides[1].points).toEqual(["First point", "Second point"]);
     expect(d.slides[1].notes).toBe("Say hello");
-    expect(d.slides[2].image).toMatch(/^data:image\/png;base64,/);
+    // The fixture picture is icon-sized, so it is treated as decoration and left out.
+    expect(d.slides[2].image).toBeUndefined();
   });
 });

@@ -1,3 +1,4 @@
+import { splitLong } from "../design/classify";
 import type { Deck, Slide } from "./types";
 
 let counter = 0;
@@ -7,7 +8,7 @@ export function newId(): string {
 }
 
 export function makeDeck(title: string, slides: Slide[], source: Deck["source"]): Deck {
-  const filled = autoSection(slides.filter((s) => s.title.trim() || s.points.length || s.image));
+  const filled = splitLong(autoSection(slides.filter((s) => s.title.trim() || s.points.length || s.image)), newId);
   return {
     title: title.trim() || filled[0]?.title || "Untitled",
     slides: filled,

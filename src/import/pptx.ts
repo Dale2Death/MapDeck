@@ -55,7 +55,7 @@ const MIME: Record<string, string> = {
   webp: "image/webp",
 };
 
-async function slideFromXml(zip: JSZip, path: string, section: string): Promise<Slide> {
+async function slideFromXml(zip: JSZip, path: string, section: string, slideArea: number): Promise<Slide> {
   const doc = xml(await zip.file(path)!.async("text"));
   let title = "";
   const points: string[] = [];
@@ -77,15 +77,26 @@ async function slideFromXml(zip: JSZip, path: string, section: string): Promise<
   }
   if (!title && points.length) title = points.shift()!;
 
-  // First picture on the slide, if any.
+  // Keep a real photo or chart, but not logos, icons or full-bleed backgrounds:
+  // the old deck's design is thrown away, only its content survives.
   let image: string | undefined;
-  const blip = doc.getElementsByTagNameNS(NS_A, "blip")[0];
-  const rid = blip?.getAttributeNS(NS_R, "embed");
-  if (rid) {
-    const target = (await rels(zip, path)).get(rid);
+  let bestArea = 0;
+  let bestRid: string | null = null;
+  for (const pic of Array.from(doc.getElementsByTagNameNS(NS_P, "pic"))) {
+    const ext = pic.getElementsByTagNameNS(NS_A, "ext")[0];
+    const area = Number(ext?.getAttribute("cx") ?? 0) * Number(ext?.getAttribute("cy") ?? 0);
+    const share = slideArea ? area / slideArea : 0.3;
+    const rid = pic.getElementsByTagNameNS(NS_A, "blip")[0]?.getAttributeNS(NS_R, "embed");
+    if (rid && share >= 0.12 && share <= 0.85 && area > bestArea) {
+      bestArea = area;
+      bestRid = rid;
+    }
+  }
+  if (bestRid) {
+    const target = (await rels(zip, path)).get(bestRid);
     const ext = target?.split(".").pop()?.toLowerCase() ?? "";
     const file = target ? zip.file(target) : null;
-    if (file && MIME[ext]) image = `data:${MIME[ext]};base64,${await file.async("base64")}`;
+    if (file && MIME[ext] && ext !== "svg") image = `data:${MIME[ext]};base64,${await file.async("base64")}`;
   }
 
   // Speaker notes.
@@ -131,7 +142,9 @@ export async function parsePptx(data: ArrayBuffer, fallbackTitle = "Untitled"): 
   }
 
   const slides: Slide[] = [];
-  for (const path of order) slides.push(await slideFromXml(zip, path, sectionOf.get(path) ?? ""));
+  const sz = pres.getElementsByTagNameNS(NS_P, "sldSz")[0];
+  const slideArea = Number(sz?.getAttribute("cx") ?? 0) * Number(sz?.getAttribute("cy") ?? 0);
+  for (const path of order) slides.push(await slideFromXml(zip, path, sectionOf.get(path) ?? "", slideArea));
 
   let title = "";
   const core = zip.file("docProps/core.xml");
