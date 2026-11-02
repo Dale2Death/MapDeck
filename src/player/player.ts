@@ -3,6 +3,9 @@ import { STYLES, getStyle, type Layout, type Rect, type Step } from "../styles";
 import { CARD_H, CARD_W } from "../styles/util";
 import { easeInOut, interpolateZoom, type View } from "./camera";
 import { cardClass, cardHtml } from "./card";
+import { icon } from "./icons";
+import { ink } from "../design/sketch";
+import { normalizeTheme } from "./css";
 import { PLAYER_CSS } from "./css";
 
 export interface PlayerOptions {
@@ -35,7 +38,7 @@ function injectCss() {
 
 /** Load Google Fonts used by the themes or a brand kit. Best effort. */
 export function loadFonts(extra: (string | undefined)[] = []) {
-  const families = ["Inter:wght@400;600;700;800", "Space Grotesk:wght@600;700;800", "Fraunces:opsz,wght@9..144,700;9..144,800;9..144,900"];
+  const families = ["Instrument Sans:wght@400;500;600;700", "Instrument Serif:ital@0;1", "Shantell Sans:wght@400;500;700", "IBM Plex Mono:wght@500"];
   for (const f of extra) if (f) families.push(`${f}:wght@400;700;800`);
   const href = `https://fonts.googleapis.com/css2?${families.map((f) => "family=" + encodeURIComponent(f).replace(/%20/g, "+")).join("&")}&display=swap`;
   let link = document.getElementById(FONT_LINK_ID) as HTMLLinkElement | null;
@@ -124,6 +127,10 @@ export class Player {
     this.bindPointer();
     if (this.opts.keyboard) this.bindKeys();
     this.bindIdle();
+    const mq = window.matchMedia?.("(prefers-color-scheme: dark)");
+    const onScheme = () => (this.el.dataset.paper = this.resolvePaper());
+    mq?.addEventListener?.("change", onScheme);
+    this.disposers.push(() => mq?.removeEventListener?.("change", onScheme));
   }
 
   // ---------- public API ----------
@@ -181,7 +188,7 @@ export class Player {
     this.flyTo(this.currentStep().rect, this.morphMs());
     this.afterStep(false);
     this.updateChrome();
-    if (announce) this.toast(`${getStyle(style).emoji} Remixed to ${getStyle(style).name}`);
+    if (announce) this.toast(`Remixed to ${getStyle(style).name}`);
     this.opts.onStyle?.(style);
   }
 
@@ -256,31 +263,35 @@ export class Player {
   }
 
   private applyLook() {
-    const { theme, style, brand } = this.settings;
-    this.el.dataset.theme = theme;
+    const { style, brand } = this.settings;
+    this.el.dataset.theme = normalizeTheme(this.settings.theme);
     this.el.dataset.style = style;
+    this.el.dataset.paper = this.resolvePaper();
     const st = this.el.style;
-    for (const v of ["--accent", "--c0", "--c1", "--font", "--font-head"]) st.removeProperty(v);
-    if (brand?.primary) {
-      st.setProperty("--accent", brand.primary);
-      st.setProperty("--c0", brand.primary);
-    }
+    for (const v of ["--c0", "--c1", "--font", "--font-display"]) st.removeProperty(v);
+    if (brand?.primary) st.setProperty("--c0", brand.primary);
     if (brand?.secondary) st.setProperty("--c1", brand.secondary);
     if (brand?.bodyFont) st.setProperty("--font", `"${brand.bodyFont}", system-ui, sans-serif`);
-    if (brand?.headingFont) st.setProperty("--font-head", `"${brand.headingFont}", system-ui, sans-serif`);
+    if (brand?.headingFont) st.setProperty("--font-display", `"${brand.headingFont}", Georgia, serif`);
     this.captionEl.innerHTML = "";
     if (brand?.logo) {
       const img = document.createElement("img");
       img.src = brand.logo;
       img.alt = "";
-      img.style.cssText = "max-height:34px;max-width:140px;object-fit:contain;display:block;margin-bottom:6px";
+      img.style.cssText = "max-height:30px;max-width:130px;object-fit:contain;display:block;margin-bottom:4px";
       this.captionEl.appendChild(img);
     }
     const t = document.createElement("div");
+    t.className = "t";
     t.textContent = this.deck.title;
     this.captionEl.appendChild(t);
-    const sm = document.createElement("small");
-    this.captionEl.appendChild(sm);
+    this.captionEl.appendChild(document.createElement("small"));
+  }
+
+  private resolvePaper(): "light" | "dark" {
+    const p = this.settings.paper ?? "auto";
+    if (p !== "auto") return p;
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
 
   /** Create, update or remove card elements to match the deck. */
@@ -302,8 +313,8 @@ export class Player {
         this.cardsEl.appendChild(el);
         this.cardEls.set(s.id, el);
       }
-      el.className = cardClass(s);
-      el.innerHTML = cardHtml(s, i + 1, this.settings.brand?.logo);
+      el.className = cardClass(s, i) + (el.classList.contains("is-active") ? " is-active" : "");
+      el.innerHTML = cardHtml(s, i + 1, this.settings.brand?.logo, i);
       el.style.setProperty("--sec", `var(--c${sections.indexOf(s.section) % 5})`);
     });
     for (const [id, el] of this.cardEls) {
@@ -355,8 +366,8 @@ export class Player {
       this.tokenEl.dataset.kind = kind;
       this.tokenEl.innerHTML =
         kind === "pawn"
-          ? `<div class="mdp-token-inner"><svg class="mdp-pawn" viewBox="0 0 150 210"><ellipse cx="75" cy="196" rx="70" ry="14" fill="rgba(0,0,0,.25)"/><path d="M30,190 Q30,150 55,135 Q40,120 45,95 Q50,75 75,72 Q100,75 105,95 Q110,120 95,135 Q120,150 120,190 z" style="fill:var(--accent);stroke:var(--ink)" stroke-width="7"/><circle cx="75" cy="48" r="36" style="fill:var(--accent);stroke:var(--ink)" stroke-width="7"/><circle cx="64" cy="38" r="9" fill="#fff" opacity=".7"/></svg></div>`
-          : `<div class="mdp-token-inner"><svg class="mdp-traveller" viewBox="0 0 120 160"><ellipse cx="60" cy="150" rx="40" ry="9" fill="rgba(0,0,0,.25)"/><path d="M60,148 C60,148 12,90 12,58 A48,48 0 1 1 108,58 C108,90 60,148 60,148 z" style="fill:var(--accent);stroke:var(--ink)" stroke-width="6"/><circle cx="60" cy="58" r="20" style="fill:var(--ink)"/></svg></div>`;
+          ? `<div class="mdp-token-inner"><svg width="150" height="210" viewBox="0 0 150 210">${ink.ellipse(75, 196, 130, 22, { seed: 4, width: 1.5, stroke: "var(--ink-soft)", fill: "var(--ink-soft)", fillStyle: "hachure", hachureGap: 5 })}${ink.path("M30,190 Q30,150 55,135 Q40,120 45,95 Q50,75 75,72 Q100,75 105,95 Q110,120 95,135 Q120,150 120,190 Z", { seed: 5, width: 5, stroke: "var(--ink)", fill: "var(--accent)", fillStyle: "hachure", hachureGap: 9, fillWeight: 4 })}${ink.circle(75, 46, 70, { seed: 6, width: 5, stroke: "var(--ink)", fill: "var(--accent)", fillStyle: "solid" })}</svg></div>`
+          : `<div class="mdp-token-inner"><svg width="120" height="160" viewBox="0 0 120 160">${ink.ellipse(60, 150, 80, 16, { seed: 7, width: 1.5, stroke: "var(--ink-soft)", fill: "var(--ink-soft)", fillStyle: "hachure", hachureGap: 5 })}${ink.path("M60,146 C60,146 14,92 14,60 A46,46 0 1 1 106,60 C106,92 60,146 60,146 Z", { seed: 8, width: 5, stroke: "var(--ink)", fill: "var(--accent)", fillStyle: "solid" })}${ink.circle(60, 58, 36, { seed: 9, width: 4, stroke: "var(--ink)", fill: "var(--paper-2)", fillStyle: "solid" })}</svg></div>`;
     }
     this.placeToken(false);
   }
@@ -459,7 +470,7 @@ export class Player {
     const ids = this.deck.slides.map((s) => s.id);
     const centres = ids.map((id) => this.layout.cards[id]).filter(Boolean);
     if (centres.length > 1) {
-      inner += `<polyline points="${centres.map((c) => `${c.x},${c.y}`).join(" ")}" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="${b.w / 220}"/>`;
+      inner += `<polyline points="${centres.map((c) => `${c.x},${c.y}`).join(" ")}" fill="none" style="stroke:var(--ink-soft)" stroke-width="${b.w / 260}" stroke-dasharray="${b.w / 120} ${b.w / 120}"/>`;
     }
     this.deck.slides.forEach((s) => {
       const c = this.layout.cards[s.id];
@@ -467,9 +478,9 @@ export class Player {
       const w = c.w;
       const h = (c.w * CARD_H) / CARD_W;
       const active = s.id === focusId;
-      inner += `<rect data-id="${s.id}" x="${c.x - w / 2}" y="${c.y - h / 2}" width="${w}" height="${h}" rx="${w / 14}" style="fill:${active ? "#fff" : `var(--c${sections.indexOf(s.section) % 5})`}" opacity="${active ? 1 : 0.8}"/>`;
+      inner += `<rect data-id="${s.id}" x="${c.x - w / 2}" y="${c.y - h / 2}" width="${w}" height="${h}" rx="${w / 14}" style="fill:${active ? "var(--ink)" : `var(--c${sections.indexOf(s.section) % 5})`}" opacity="${active ? 1 : 0.75}"/>`;
     });
-    inner += `<rect class="mdp-mini-view" fill="none" stroke="#fff" stroke-width="${b.w / 120}" rx="${b.w / 80}"/>`;
+    inner += `<rect class="mdp-mini-view" fill="none" style="stroke:var(--ink)" stroke-width="${b.w / 140}" rx="${b.w / 80}"/>`;
     this.miniEl.innerHTML = `<svg viewBox="${b.x} ${b.y} ${b.w} ${b.h}" preserveAspectRatio="xMidYMid meet">${inner}</svg>`;
     this.drawViewport();
   }
@@ -631,24 +642,24 @@ export class Player {
       return b;
     };
     const sep = () => c.appendChild(Object.assign(document.createElement("span"), { className: "mdp-sep" }));
-    btn("◀", "Previous (←)", () => this.prev());
+    btn(icon("chevron-left"), "Previous (←)", () => this.prev());
     this.countEl = document.createElement("span");
     this.countEl.className = "mdp-count";
     c.appendChild(this.countEl);
-    btn("▶", "Next (→ or space)", () => this.next());
+    btn(icon("chevron-right"), "Next (→ or space)", () => this.next());
     sep();
-    btn("⌂", "Overview (O)", () => this.overview());
-    btn("▦", "Minimap (M)", () => this.setMinimap(!this.opts.minimap)).dataset.role = "mini";
+    btn(icon("home"), "Overview (O)", () => this.overview());
+    btn(icon("map"), "Minimap (M)", () => this.setMinimap(!this.opts.minimap)).dataset.role = "mini";
     sep();
     c.appendChild(Object.assign(document.createElement("span"), { className: "mdp-remix-label", textContent: "Remix" }));
     STYLES.forEach((s, i) => {
-      const b = btn(s.emoji, `${s.name} (${i + 1})`, () => this.setStyle(s.id));
+      const b = btn(icon(s.icon), `${s.name} (${i + 1})`, () => this.setStyle(s.id));
       b.dataset.style = s.id;
     });
     if (this.opts.extraButtons?.length || this.opts.onExit) sep();
     for (const x of this.opts.extraButtons ?? []) btn(x.label, x.title, x.onClick);
-    btn("⛶", "Full screen (F)", () => this.toggleFullscreen(), "mdp-hide-sm");
-    if (this.opts.onExit) btn("✕", "Exit (Esc)", () => this.opts.onExit?.());
+    btn(icon("maximize"), "Full screen (F)", () => this.toggleFullscreen(), "mdp-hide-sm");
+    if (this.opts.onExit) btn(icon("x"), "Exit (Esc)", () => this.opts.onExit?.());
     this.el.appendChild(c);
     this.chromeEl = c;
     this.updateChrome();

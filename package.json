@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Turn decks and documents into journey, zoom and spider-web presentations",
   "scripts": {
-    "build:player": "node scripts/build-player.mjs",
+    "build:player": "node scripts/build-doodles.mjs && node scripts/build-player.mjs",
     "dev": "npm run build:player && vite",
     "build": "npm run build:player && tsc --noEmit && vite build",
     "preview": "vite preview",
@@ -15,9 +15,11 @@
     "lz-string": "^1.5.0",
     "pdfjs-dist": "^6.5.438",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "roughjs": "^4.6.6"
   },
   "devDependencies": {
+    "@tabler/icons": "^3.50.0",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

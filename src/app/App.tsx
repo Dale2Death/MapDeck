@@ -9,10 +9,17 @@ import { Quiz } from "./Quiz";
 import { Studio } from "./Studio";
 import { getPref, saveDeck, setPref } from "./storage";
 import { TopBar } from "./TopBar";
+import { normalizeTheme } from "../player/css";
+import "./paper";
+
+/** Older saved decks used theme names that no longer exist. */
+function normalize(p: Presentation | null): Presentation | null {
+  return p ? { ...p, settings: { ...p.settings, theme: normalizeTheme(p.settings.theme) } } : p;
+}
 
 type View = "home" | "quiz" | "studio" | "present";
 
-export const DEFAULT_SETTINGS: Presentation["settings"] = { style: "journey", theme: "midnight", pace: "measured" };
+export const DEFAULT_SETTINGS: Presentation["settings"] = { style: "journey", theme: "field", paper: "auto", pace: "measured" };
 
 export function App() {
   const [hash, setHash] = useState(location.hash);
@@ -23,7 +30,7 @@ export function App() {
   }, []);
 
   if (hash.startsWith("#/presenter")) return <Presenter />;
-  const shared = readShareHash(hash);
+  const shared = normalize(readShareHash(hash));
   if (shared) return <SharedView pres={shared} />;
   return <Editor />;
 }
@@ -43,7 +50,7 @@ function Editor() {
   const [user, setUser] = useState<User | null>(currentUser);
   const owner = user?.email ?? "guest";
   const [view, setView] = useState<View>(() => (getPref<Presentation | null>("current", null) ? "studio" : "home"));
-  const [pres, setPres] = useState<Presentation | null>(() => getPref<Presentation | null>("current", null));
+  const [pres, setPres] = useState<Presentation | null>(() => normalize(getPref<Presentation | null>("current", null)));
   const [deckId, setDeckId] = useState<string>(() => getPref("currentId", `d${Date.now().toString(36)}`));
   const [recording, setRecording] = useState<MediaStream | null>(null);
 
@@ -59,7 +66,7 @@ function Editor() {
   }, [pres, deckId, owner]);
 
   const startNew = useCallback((p: Presentation, id?: string, skipQuiz = false) => {
-    setPres(p);
+    setPres(normalize(p));
     setDeckId(id ?? `d${Date.now().toString(36)}`);
     setView(skipQuiz ? "studio" : "quiz");
   }, []);
@@ -68,7 +75,7 @@ function Editor() {
 
   return (
     <div className="app">
-      {view !== "present" && <TopBar user={user} onUser={setUser} onHome={goHome} hasDeck={!!pres} onStudio={() => setView("studio")} />}
+      {view !== "present" && <TopBar view={view} user={user} onUser={setUser} onHome={goHome} hasDeck={!!pres} onStudio={() => setView("studio")} />}
       {view === "home" && <Home owner={owner} onDeck={startNew} />}
       {view === "quiz" && pres && (
         <Quiz

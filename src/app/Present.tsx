@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { download, safeFileName } from "../core/export";
 import type { Presentation, StyleId } from "../core/types";
 import type { Player } from "../player/player";
+import { icon } from "../player/icons";
 import { PlayerView } from "./PlayerView";
 import { recordPlayback } from "./record";
 import { CHANNEL, type PresenterMsg } from "./Presenter";
@@ -91,7 +92,7 @@ export function Present({ pres, shared, recordStream, onStyle, onExit }: Props) 
           onExit,
           extraButtons: shared
             ? [{ label: "Make your own", title: "Open MapDeck", onClick: () => (location.href = location.pathname) }]
-            : [{ label: "🗒", title: "Presenter view (notes + timer)", onClick: openPresenter }],
+            : [{ label: icon("notes"), title: "Presenter view (notes + timer)", onClick: openPresenter }],
         }}
       />
       {rec === "recording" && <div className="rec-badge">● Recording… press Stop sharing to end early</div>}

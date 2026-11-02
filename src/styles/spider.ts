@@ -4,6 +4,7 @@ import {
   type CardPlace, type Layout, type Rect, type Step, type StyleDef, cardRect, overview, sectionColor, slideStep,
   svgText, union, wrap,
 } from "./util";
+import { hashSeed, ink, wash } from "../design/sketch";
 
 /**
  * Spider web: the opening slide is the hub. Each section is a branch node
@@ -13,6 +14,7 @@ export const spider: StyleDef = {
   id: "spider",
   name: "Spider web",
   emoji: "🕸️",
+  icon: "topology-star-3",
   tagline: "One central idea, everything connected",
   layout(deck: Deck): Layout {
     const [hub, ...rest] = deck.slides;
@@ -51,18 +53,16 @@ export const spider: StyleDef = {
     const all = Object.values(cards).map((c) => cardRect(c));
     const bounds = union(all, 280);
 
-    // The web: spokes out from the hub and rings joining them.
+    // The web: spokes out from the hub and sagging threads joining them.
     let decor = "";
     const spokes = Math.max(B, 6);
     const reach = Math.max(bounds.w, bounds.h) * 0.55;
     const ringR = [0.22, 0.42, 0.64, 0.86].map((f) => f * reach);
-    for (let i = 0; i < spokes; i++) {
-      const a = -Math.PI / 2 + (i / spokes) * Math.PI * 2 + (B < 6 ? Math.PI / spokes : 0);
-      decor += `<line x1="0" y1="0" x2="${Math.cos(a) * reach}" y2="${Math.sin(a) * reach * 0.82}" style="stroke:var(--web)" stroke-width="5"/>`;
-    }
     const spokeAngles = [...Array(spokes)].map((_, i) => -Math.PI / 2 + (i / spokes) * Math.PI * 2 + (B < 6 ? Math.PI / spokes : 0));
-    for (const r of ringR) {
-      // Slightly sagging threads between spokes, like a real web.
+    spokeAngles.forEach((a, i) => {
+      decor += ink.line(0, 0, Math.cos(a) * reach, Math.sin(a) * reach * 0.82, { seed: 100 + i, width: 3, roughness: 1.2, stroke: "var(--ink-soft)", single: true });
+    });
+    ringR.forEach((r, ri) => {
       let d = "";
       spokeAngles.forEach((a, i) => {
         const b = spokeAngles[(i + 1) % spokes];
@@ -72,26 +72,33 @@ export const spider: StyleDef = {
         const sag = { x: Math.cos(mid) * r * 0.9, y: Math.sin(mid) * r * 0.82 * 0.9 };
         d += `${i === 0 ? `M${p.x},${p.y}` : ""} Q${sag.x},${sag.y} ${q.x},${q.y}`;
       });
-      decor += `<path d="${d}" fill="none" style="stroke:var(--web)" stroke-width="4"/>`;
-    }
+      decor += ink.path(d, { seed: 200 + ri, width: 2.5, roughness: 1.1, stroke: "var(--ink-soft)", single: true });
+    });
 
-    // Threads from hub to branch nodes to leaves.
-    for (const n of nodes) {
-      decor += `<path d="M0,0 Q${n.x * 0.5 + n.y * 0.08},${n.y * 0.5 - n.x * 0.08} ${n.x},${n.y}" fill="none" style="stroke:${n.color}" stroke-width="18" stroke-linecap="round"/>`;
-      if (perSlide) continue;
-      for (const s of n.leaves) {
+    // Washes under each branch, then threads from hub to branch to leaves.
+    nodes.forEach((n, i) => {
+      const cluster = [{ x: n.x, y: n.y }, ...n.leaves.map((s) => cards[s.id])];
+      const cx = cluster.reduce((a, p) => a + p.x, 0) / cluster.length;
+      const cy = cluster.reduce((a, p) => a + p.y, 0) / cluster.length;
+      decor += wash(cx, cy, perSlide ? 700 : 1100, perSlide ? 520 : 800, n.color, hashSeed(n.name + i), 0.8);
+    });
+    nodes.forEach((n, i) => {
+      decor += ink.curve([[0, 0], [n.x * 0.5 + n.y * 0.08, n.y * 0.5 - n.x * 0.08], [n.x, n.y]], { seed: 300 + i, width: 9, roughness: 1, stroke: "var(--ink)" });
+      if (perSlide) return;
+      n.leaves.forEach((s, j) => {
         const c = cards[s.id];
-        decor += `<line x1="${n.x}" y1="${n.y}" x2="${c.x}" y2="${c.y}" style="stroke:${n.color}" stroke-width="10" stroke-dasharray="4 22" stroke-linecap="round"/>`;
-      }
-    }
+        decor += ink.line(n.x, n.y, c.x, c.y, { seed: 400 + i * 20 + j, width: 4, roughness: 1.4, stroke: "var(--ink)", dash: "14 18", single: true });
+      });
+    });
     let overlay = "";
     if (!perSlide) {
-      for (const n of nodes) {
-        overlay += `<circle cx="${n.x}" cy="${n.y}" r="230" style="fill:${n.color}"/>`;
+      nodes.forEach((n, i) => {
+        overlay += ink.circle(n.x, n.y, 460, { seed: 500 + i, width: 6, stroke: "var(--ink)", fill: "var(--paper-2)", fillStyle: "solid" });
+        overlay += ink.circle(n.x, n.y, 420, { seed: 600 + i, width: 2, stroke: "none", fill: n.color, fillStyle: "hachure", hachureGap: 14, fillWeight: 6 });
         const lines = wrap(n.name, 12, 3);
-        const size = 56;
-        overlay += svgText(lines, n.x, n.y - ((lines.length - 1) * size * 1.15) / 2 + size * 0.35, size, `text-anchor="middle" font-weight="800" style="fill:var(--on-accent)"`);
-      }
+        const size = 62;
+        overlay += svgText(lines, n.x, n.y - ((lines.length - 1) * size * 1.15) / 2 + size * 0.35, size, `text-anchor="middle" font-weight="700"`);
+      });
     }
 
     const steps: Step[] = [overview(bounds, "The whole web"), slideStep(hub.id, cards[hub.id])];

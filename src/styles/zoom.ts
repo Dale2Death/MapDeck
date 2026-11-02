@@ -4,6 +4,7 @@ import {
   CARD_H, type CardPlace, type Layout, type Rect, type Step, type StyleDef, overview, sectionColor,
   slideStep, union, wrap, svgText,
 } from "./util";
+import { hashSeed, ink, wash } from "../design/sketch";
 
 /**
  * Zoom in / zoom out: one big canvas. Each section is a frame holding its
@@ -14,6 +15,7 @@ export const zoom: StyleDef = {
   id: "zoom",
   name: "Zoom in / out",
   emoji: "🔭",
+  icon: "zoom-in",
   tagline: "Big picture first, then dive into the details",
   layout(deck: Deck): Layout {
     const groups = sectionsOf(deck.slides);
@@ -76,13 +78,18 @@ export const zoom: StyleDef = {
     const titleY = -titleSize * (titleLines.length - 1) * 1.15 - 160;
 
     let decor = "";
+    let overlay = "";
     frameRects.forEach(({ rect, name }, i) => {
-      decor += `<rect x="${rect.x}" y="${rect.y}" width="${rect.w}" height="${rect.h}" rx="60" style="fill:var(--frame);stroke:${sectionColor(i)}" stroke-width="14"/>`;
-      decor += `<circle cx="${rect.x + 110}" cy="${rect.y + 140}" r="48" style="fill:${sectionColor(i)}"/>`;
-      decor += `<text x="${rect.x + 110}" y="${rect.y + 158}" text-anchor="middle" font-size="52" font-weight="800" style="fill:var(--on-accent)">${i + 1}</text>`;
-      decor += svgText(wrap(name, Math.max(18, Math.floor(rect.w / 50)), 1), rect.x + 190, rect.y + 165, 84, `font-weight="800" style="fill:var(--ink)"`);
+      const seed = hashSeed(name + i);
+      decor += wash(rect.x + rect.w / 2, rect.y + rect.h / 2, rect.w * 0.56, rect.h * 0.58, sectionColor(i), seed, 0.8);
+      decor += ink.rect(rect.x, rect.y, rect.w, rect.h, { seed, width: 6, roughness: 1.4, bowing: 0.8, stroke: "var(--ink)" });
+      decor += ink.circle(rect.x + 120, rect.y + 145, 110, { seed: seed + 1, width: 5, stroke: "var(--ink)", fill: sectionColor(i), fillStyle: "hachure", hachureGap: 9, fillWeight: 5 });
+      decor += `<text x="${rect.x + 120}" y="${rect.y + 165}" text-anchor="middle" font-size="58" font-weight="700">${i + 1}</text>`;
+      decor += svgText(wrap(name, Math.max(18, Math.floor(rect.w / 46)), 1), rect.x + 210, rect.y + 172, 80, `font-weight="700"`);
     });
-    const overlay = svgText(titleLines, 0, titleY, titleSize, `text-anchor="middle" font-weight="900" style="fill:var(--ink)" letter-spacing="-4"`);
+    overlay += svgText(titleLines, 0, titleY, titleSize, `text-anchor="middle" class="lbl-display"`);
+    const ul = titleY + (titleLines.length - 1) * titleSize * 1.15 + titleSize * 0.3;
+    overlay += ink.curve([[-maxW * 0.22, ul], [-maxW * 0.05, ul - titleSize * 0.12], [maxW * 0.12, ul - titleSize * 0.02], [maxW * 0.24, ul - titleSize * 0.16]], { seed: 3, width: 14, roughness: 1.5, stroke: "var(--c0)", single: true });
 
     const all = union([...frameRects.map((f) => f.rect), { x: -maxW / 2, y: titleY - titleSize, w: maxW, h: titleSize }], 260);
     const steps: Step[] = [overview(all, deck.title)];

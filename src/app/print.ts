@@ -9,6 +9,8 @@ import { Player } from "../player/player";
 export async function printPresentation(pres: Presentation) {
   const root = document.getElementById("print-root")!;
   root.innerHTML = "";
+  // Printed pages are always on light paper.
+  pres = { ...pres, settings: { ...pres.settings, paper: "light" } };
   const { theme, style } = pres.settings;
 
   const mapPage = document.createElement("div");
@@ -23,10 +25,11 @@ export async function printPresentation(pres: Presentation) {
     page.className = "print-page mdp";
     page.dataset.theme = theme;
     page.dataset.style = style;
+    page.dataset.paper = "light";
     const card = document.createElement("div");
-    card.className = cardClass(s) + " print-card";
+    card.className = cardClass(s, i) + " print-card";
     card.style.setProperty("--sec", `var(--c${sections.indexOf(s.section) % 5})`);
-    card.innerHTML = cardHtml(s, i + 1, pres.settings.brand?.logo);
+    card.innerHTML = cardHtml(s, i + 1, pres.settings.brand?.logo, i);
     page.appendChild(card);
     if (s.notes) {
       const n = document.createElement("div");

@@ -12,9 +12,8 @@ interface Line {
 }
 
 /**
- * Each PDF page becomes one slide. The largest text on the page is the
- * title, the rest becomes points, and a picture of the page is kept so
- * charts and visuals survive.
+ * Each PDF page with text becomes one slide. The largest text on the page is
+ * the title and the rest becomes points. MapDeck redesigns everything.
  */
 export async function parsePdf(data: ArrayBuffer, fallbackTitle = "Untitled", onProgress?: (p: number) => void): Promise<Deck> {
   const doc = await pdfjs.getDocument({ data: new Uint8Array(data) }).promise;
@@ -50,16 +49,8 @@ export async function parsePdf(data: ArrayBuffer, fallbackTitle = "Untitled", on
       .filter((t) => !/^\d{1,3}$/.test(t))
       .slice(0, 8);
 
-    const viewport = page.getViewport({ scale: 1 });
-    const scale = Math.min(1.5, 1100 / viewport.width);
-    const vp = page.getViewport({ scale });
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(vp.width);
-    canvas.height = Math.round(vp.height);
-    await page.render({ canvas, canvasContext: canvas.getContext("2d")!, viewport: vp } as any).promise;
-    const image = canvas.toDataURL("image/jpeg", 0.78);
-
-    slides.push({ id: newId(), title: title || `Page ${n}`, points, section: "", image, imageFit: "full" });
+    // Only the words come across; the page's old design is left behind.
+    if (title || points.length) slides.push({ id: newId(), title: title || points.shift() || `Page ${n}`, points, section: "" });
     onProgress?.(n / pages);
   }
   const meta = (await doc.getMetadata().catch(() => null)) as any;

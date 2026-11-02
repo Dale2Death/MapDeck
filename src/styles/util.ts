@@ -1,3 +1,4 @@
+import { doodleSvg } from "../design/doodles";
 import type { Deck, StyleId } from "../core/types";
 
 export const CARD_W = 960;
@@ -42,6 +43,8 @@ export interface StyleDef {
   id: StyleId;
   name: string;
   emoji: string;
+  /** Interface icon name (see player/icons.ts). */
+  icon: string;
   tagline: string;
   layout(deck: Deck): Layout;
 }
@@ -152,4 +155,10 @@ export function svgText(
     .map((l, i) => `<tspan x="${x}" dy="${i === 0 ? 0 : size * 1.15}">${esc(l)}</tspan>`)
     .join("");
   return `<text x="${x}" y="${y}" font-size="${size}" ${attrs}>${tspans}</text>`;
+}
+
+/** A hand-inked doodle placed in world coordinates. */
+export function doodleAt(name: string, seedKey: string, x: number, y: number, size: number, color: string): string {
+  const svg = doodleSvg(name, seedKey, color, "");
+  return svg.replace("<svg ", `<svg x="${x - size / 2}" y="${y - size / 2}" width="${size}" height="${size}" overflow="visible" `);
 }
