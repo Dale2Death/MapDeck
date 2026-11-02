@@ -4,3 +4,5 @@ src/generated
 *.log
 .DS_Store
 .env
+preview
+preview-dist

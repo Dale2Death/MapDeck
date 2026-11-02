@@ -1,0 +1,33 @@
+{
+  "name": "mapdeck",
+  "version": "1.0.0",
+  "description": "Turn decks and documents into journey, zoom and spider-web presentations",
+  "scripts": {
+    "build:player": "node scripts/build-player.mjs",
+    "dev": "npm run build:player && vite",
+    "build": "npm run build:player && tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build:player && vitest run"
+  },
+  "dependencies": {
+    "jszip": "^3.10.2",
+    "lz-string": "^1.5.0",
+    "pdfjs-dist": "^6.5.438",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.2.1",
+    "esbuild": "^0.28.2",
+    "jsdom": "^30.1.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.1.0"
+  },
+  "private": true,
+  "type": "module"
+}
