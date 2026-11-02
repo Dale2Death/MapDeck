@@ -32,6 +32,15 @@ export function autoSection(slides: Slide[]): Slide[] {
       return { ...s, section: s.section || last };
     });
   }
+  // Title-only "divider" slides (like PowerPoint section headers) start a new section.
+  const dividers = slides.map((s, i) => i > 0 && !s.points.length && !s.image && !!s.title.trim());
+  if (dividers.filter(Boolean).length >= 2) {
+    let current = slides[dividers.indexOf(true)].title;
+    return slides.map((s, i) => {
+      if (dividers[i]) current = s.title;
+      return { ...s, section: current };
+    });
+  }
   const n = slides.length;
   const groups = n <= 4 ? 1 : Math.min(6, Math.ceil(n / 3));
   const size = Math.ceil(n / groups);

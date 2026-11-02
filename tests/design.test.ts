@@ -69,3 +69,18 @@ describe("describe it", () => {
     expect(scoreQuiz([0, 0, 1, 1, 1]).theme).toBe("harbour");
   });
 });
+
+describe("autoSection", () => {
+  it("uses title-only divider slides as sections", async () => {
+    const { autoSection } = await import("../src/core/deck");
+    const out = autoSection([
+      slide("Deck", ["sub"], { section: "" }),
+      slide("Where we are", [], { section: "" }),
+      slide("Numbers", ["a", "b"], { section: "" }),
+      slide("The plan", [], { section: "" }),
+      slide("Steps", ["x"], { section: "" }),
+      slide("Thanks", ["Questions?"], { section: "" }),
+    ]);
+    expect(out.map((s) => s.section)).toEqual(["Where we are", "Where we are", "Where we are", "The plan", "The plan", "The plan"]);
+  });
+});
