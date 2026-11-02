@@ -36,7 +36,7 @@ where they are in the bigger picture.
   - HTML: one self-contained file that plays offline, images included.
   - PDF: print view with the full map on page 1 and one page per slide (with notes).
   - Video: plays hands-free and records the tab (WebM/MP4, browser permitting).
-- **Google sign-in**: set `VITE_GOOGLE_CLIENT_ID` (see `.env.example`). Decks are saved in the
+- **Google sign-in**: client ID is in `.env.production` (see `.env.example`). Decks are saved in the
   browser, per user.
 
 ## Keyboard
