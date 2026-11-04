@@ -42,10 +42,30 @@ describe("doodles", () => {
     expect(pickDoodle(slide("Anything", [], { doodle: "none" }), 1)).toBeNull();
     expect(pickDoodle(slide("zzz qqq"), 1)).toBeTruthy();
   });
-  it("renders every layout", () => {
+  it("renders every layout in the hand-drawn look", () => {
     for (const layout of ["title", "statement", "list", "stat", "steps", "compare", "quote"] as const) {
-      expect(cardHtml(slide("T", ["a 50%", "b"], { layout }), 1)).toContain(`mdp-l-${layout}`);
+      expect(cardHtml(slide("T", ["a 50%", "b"], { layout }), 1, undefined, 0, { look: "sketch" })).toContain(`mdp-l-${layout}`);
     }
+  });
+});
+
+describe("basalt slides", () => {
+  it("renders every layout by default", () => {
+    for (const layout of ["title", "statement", "list", "stat", "steps", "compare", "quote"] as const) {
+      const html = cardHtml(slide("T", ["a 50%", "b"], { layout }), 1);
+      expect(html).toContain(`mdb-l-${layout}`);
+      expect(html).not.toMatch(/undefined|NaN/);
+    }
+  });
+  it("puts the section in the running header and highlights key numbers", () => {
+    const html = cardHtml(slide("Results", ["Spend fell 25% to $48.6K", "More to come"], { section: "Overview", layout: "list" }), 4, undefined, 3, { deckTitle: "Northwind", sectionIndex: 1, sectionCount: 3 });
+    expect(html).toContain("<b>02</b><span>Overview</span>");
+    expect(html).toContain("Northwind");
+    expect(html).toContain('<b class="mdb-key">25%</b>');
+    expect(html).toContain('<b class="mdb-key">$48.6K</b>');
+  });
+  it("escapes slide text", () => {
+    expect(cardHtml(slide("<script>", ["<b>x</b>"], { layout: "list" }), 2)).not.toContain("<script>");
   });
 });
 
@@ -59,13 +79,18 @@ describe("describe it", () => {
     expect(interpretVibe("A playful workshop with levels").ranking[0].style).toBe("gameboard");
     expect(interpretVibe("A road trip, warm and steady").ranking[0].style).toBe("journey");
   });
+  it("hears a request for the hand-drawn look", () => {
+    expect(interpretVibe("hand-drawn and playful, like a notebook").look).toBe("sketch");
+  });
   it("still answers when nothing matches", () => {
     const r = interpretVibe("blah");
     expect(r.matched).toEqual([]);
-    expect(r.theme).toBe("field");
+    expect(r.theme).toBe("guru");
+    expect(r.look).toBeUndefined();
   });
   it("quiz still scores", () => {
     expect(scoreQuiz([0, 0, 1, 1, 1]).ranking[0].style).toBe("journey");
-    expect(scoreQuiz([0, 0, 1, 1, 1]).theme).toBe("harbour");
+    expect(scoreQuiz([0, 0, 1, 1, 1]).theme).toBe("basalt");
+    expect(scoreQuiz([0, 0, 3, 1, 1]).theme).toBe("harbour");
   });
 });

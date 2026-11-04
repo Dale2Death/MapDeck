@@ -4,8 +4,8 @@ import { CARD_H, CARD_W } from "../styles/util";
 import { easeInOut, interpolateZoom, type View } from "./camera";
 import { cardClass, cardHtml } from "./card";
 import { icon } from "./icons";
-import { ink } from "../design/sketch";
-import { normalizeTheme } from "./css";
+import { ink, setInkMode } from "../design/sketch";
+import { normalizeLook, normalizeTheme } from "./css";
 import { PLAYER_CSS } from "./css";
 
 export interface PlayerOptions {
@@ -38,7 +38,7 @@ function injectCss() {
 
 /** Load Google Fonts used by the themes or a brand kit. Best effort. */
 export function loadFonts(extra: (string | undefined)[] = []) {
-  const families = ["Instrument Sans:wght@400;500;600;700", "Instrument Serif:ital@0;1", "Shantell Sans:wght@400;500;700", "IBM Plex Mono:wght@500"];
+  const families = ["Jost:wght@400;700", "Instrument Sans:wght@400;500;600;700", "Instrument Serif:ital@0;1", "Shantell Sans:wght@400;500;700", "IBM Plex Mono:wght@500"];
   for (const f of extra) if (f) families.push(`${f}:wght@400;700;800`);
   const href = `https://fonts.googleapis.com/css2?${families.map((f) => "family=" + encodeURIComponent(f).replace(/%20/g, "+")).join("&")}&display=swap`;
   let link = document.getElementById(FONT_LINK_ID) as HTMLLinkElement | null;
@@ -116,7 +116,7 @@ export class Player {
     if (this.opts.controls) this.buildChrome();
     this.applyLook();
     this.syncCards(false);
-    this.layout = getStyle(this.settings.style).layout(this.deck);
+    this.layout = this.computeLayout(this.settings.style);
     this.renderLayout(false);
     this.index = Math.min(opts.startStep ?? 0, this.layout.steps.length - 1);
     this.jumpTo(this.currentStep().rect);
@@ -180,7 +180,7 @@ export class Player {
     const wasOverview = this.currentStep()?.kind === "overview";
     this.settings.style = style;
     this.el.dataset.style = style;
-    this.layout = getStyle(style).layout(this.deck);
+    this.layout = this.computeLayout(style);
     this.renderLayout(true);
     let i = current && !wasOverview ? this.layout.steps.findIndex((s) => s.slideId === current) : 0;
     if (wasOverview && this.index > 0) i = this.layout.steps.length - 1;
@@ -209,7 +209,7 @@ export class Player {
     }
     if (pres.deck) this.deck = pres.deck;
     this.syncCards(true);
-    this.layout = getStyle(this.settings.style).layout(this.deck);
+    this.layout = this.computeLayout(this.settings.style);
     this.renderLayout(true);
     const i = current ? this.layout.steps.findIndex((s) => s.slideId === current) : -1;
     this.index = i >= 0 ? i : Math.min(this.index, this.layout.steps.length - 1);
@@ -262,8 +262,20 @@ export class Player {
     return Math.round(PACE_MS[this.settings.pace] * 1.3);
   }
 
+  /** Each player may use a different look, so set the drawing mode right before drawing. */
+  private useInk() {
+    setInkMode(normalizeLook(this.settings.look) === "basalt" ? "clean" : "rough");
+  }
+
+  private computeLayout(style: StyleId): Layout {
+    this.useInk();
+    return getStyle(style).layout(this.deck);
+  }
+
   private applyLook() {
     const { style, brand } = this.settings;
+    const look = normalizeLook(this.settings.look);
+    this.el.dataset.look = look;
     this.el.dataset.theme = normalizeTheme(this.settings.theme);
     this.el.dataset.style = style;
     this.el.dataset.paper = this.resolvePaper();
@@ -298,6 +310,7 @@ export class Player {
   private syncCards(animate: boolean) {
     const seen = new Set<string>();
     const sections = [...new Set(this.deck.slides.map((s) => s.section))];
+    const look = normalizeLook(this.settings.look);
     this.deck.slides.forEach((s, i) => {
       seen.add(s.id);
       let el = this.cardEls.get(s.id);
@@ -314,7 +327,12 @@ export class Player {
         this.cardEls.set(s.id, el);
       }
       el.className = cardClass(s, i) + (el.classList.contains("is-active") ? " is-active" : "");
-      el.innerHTML = cardHtml(s, i + 1, this.settings.brand?.logo, i);
+      el.innerHTML = cardHtml(s, i + 1, this.settings.brand?.logo, i, {
+        look,
+        deckTitle: this.deck.title,
+        sectionIndex: sections.indexOf(s.section),
+        sectionCount: sections.length,
+      });
       el.style.setProperty("--sec", `var(--c${sections.indexOf(s.section) % 5})`);
     });
     for (const [id, el] of this.cardEls) {
@@ -327,11 +345,13 @@ export class Player {
 
   private renderLayout(animate: boolean) {
     const ms = animate ? this.morphMs() : 0;
+    // Basalt is square and straight: no tilted cards.
+    const straight = normalizeLook(this.settings.look) === "basalt";
     for (const [id, el] of this.cardEls) {
       const c = this.layout.cards[id];
       if (!c) continue;
       el.style.transitionDuration = `${ms}ms`;
-      el.style.transform = `translate(${c.x - CARD_W / 2}px, ${c.y - CARD_H / 2}px) rotate(${c.rotate ?? 0}deg) scale(${c.w / CARD_W})`;
+      el.style.transform = `translate(${c.x - CARD_W / 2}px, ${c.y - CARD_H / 2}px) rotate(${straight ? 0 : c.rotate ?? 0}deg) scale(${c.w / CARD_W})`;
       if (el.style.opacity === "0") requestAnimationFrame(() => (el.style.opacity = ""));
     }
     this.swapLayer(this.decorSvg, this.layout.decor, animate);
@@ -362,8 +382,10 @@ export class Player {
     const kind = this.layout.token;
     this.tokenEl.hidden = !kind;
     if (!kind) return;
-    if (this.tokenEl.dataset.kind !== kind) {
-      this.tokenEl.dataset.kind = kind;
+    const tokenKey = `${kind}:${normalizeLook(this.settings.look)}`;
+    if (this.tokenEl.dataset.kind !== tokenKey) {
+      this.tokenEl.dataset.kind = tokenKey;
+      this.useInk();
       this.tokenEl.innerHTML =
         kind === "pawn"
           ? `<div class="mdp-token-inner"><svg width="150" height="210" viewBox="0 0 150 210">${ink.ellipse(75, 196, 130, 22, { seed: 4, width: 1.5, stroke: "var(--ink-soft)", fill: "var(--ink-soft)", fillStyle: "hachure", hachureGap: 5 })}${ink.path("M30,190 Q30,150 55,135 Q40,120 45,95 Q50,75 75,72 Q100,75 105,95 Q110,120 95,135 Q120,150 120,190 Z", { seed: 5, width: 5, stroke: "var(--ink)", fill: "var(--accent)", fillStyle: "hachure", hachureGap: 9, fillWeight: 4 })}${ink.circle(75, 46, 70, { seed: 6, width: 5, stroke: "var(--ink)", fill: "var(--accent)", fillStyle: "solid" })}</svg></div>`

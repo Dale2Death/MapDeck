@@ -3,7 +3,7 @@ import {
   CARD_H, type CardPlace, type Layout, type StyleDef, cardRect, esc, overview, pointRect, sectionColor, slideStep,
   rng, smoothPath, union,
 } from "./util";
-import { hashSeed, ink, wash } from "../design/sketch";
+import { hashSeed, ink, inkMode, wash } from "../design/sketch";
 
 /**
  * Journey: slides are billboards along a winding road. A traveller walks
@@ -63,7 +63,7 @@ export const journey: StyleDef = {
       decor += wash(c.x, c.y + 120, 760, 520, sectionColor(si), hashSeed(s.id), 0.9);
     });
     // A few hills and trees off the road, like a hand-drawn map.
-    for (let k = 0; k < slides.length; k++) {
+    for (let k = 0; k < slides.length && inkMode() === "rough"; k++) {
       const a = road[Math.min(road.length - 1, k)];
       if (!a) break;
       const x = a.x + STEP_X / 2 + (rand() - 0.5) * 200;
