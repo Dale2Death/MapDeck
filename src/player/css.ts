@@ -1,23 +1,39 @@
-import type { ThemeId } from "../core/types";
+import type { Look, ThemeId } from "../core/types";
+import { BASALT_CARD_CSS } from "./card-basalt";
 
 export interface ThemeDef {
   id: ThemeId;
   name: string;
   swatch: string[];
+  /** Which look the palette was made for. Any palette works with either look. */
+  look: Look;
+  hint?: string;
 }
 
-/** Ink palettes: the watercolour washes used for sections and highlights. */
+export const DEFAULT_LOOK: Look = "basalt";
+export const DEFAULT_THEME: ThemeId = "guru";
+
+export function normalizeLook(l: string | undefined): Look {
+  return l === "sketch" ? "sketch" : "basalt";
+}
+
+/** Colour palettes. Guru and Basalt also set the ground and ink; the sketch inks set section colours. */
 export const THEMES: ThemeDef[] = [
-  { id: "field", name: "Field notes", swatch: ["#d9a33f", "#3f6fd1", "#6f9e7b"] },
-  { id: "harbour", name: "Harbour", swatch: ["#2f7fc1", "#e2725b", "#3ba69a"] },
-  { id: "orchard", name: "Orchard", swatch: ["#7a9e5a", "#a2507f", "#e39b5b"] },
-  { id: "graphite", name: "Graphite & red", swatch: ["#2a2f3a", "#c8402f", "#8a909c"] },
+  { id: "guru", name: "Guru", swatch: ["#211D51", "#20898F", "#04CAC8"], look: "basalt", hint: "navy, teal, turquoise" },
+  { id: "basalt", name: "Basalt", swatch: ["#1E2422", "#2E6B7A", "#D4582A"], look: "basalt", hint: "paper, glacier, one ember" },
+  { id: "field", name: "Field notes", swatch: ["#d9a33f", "#3f6fd1", "#6f9e7b"], look: "sketch", hint: "ochre, cobalt, sage" },
+  { id: "harbour", name: "Harbour", swatch: ["#2f7fc1", "#e2725b", "#3ba69a"], look: "sketch", hint: "sea blue, coral, teal" },
+  { id: "orchard", name: "Orchard", swatch: ["#7a9e5a", "#a2507f", "#e39b5b"], look: "sketch", hint: "leaf, plum, apricot" },
+  { id: "graphite", name: "Graphite & red", swatch: ["#2a2f3a", "#c8402f", "#8a909c"], look: "sketch", hint: "pencil grey with one red" },
 ];
 
 /** Older saved decks used different theme names. */
 export function normalizeTheme(t: string | undefined): ThemeId {
-  return (THEMES.some((x) => x.id === t) ? t : "field") as ThemeId;
+  return (THEMES.some((x) => x.id === t) ? t : DEFAULT_THEME) as ThemeId;
 }
+
+/** Basalt fonts: Century Gothic where installed, Jost (a free geometric sans) on the web. */
+export const BASALT_FONT = `"Century Gothic","CenturyGothic","URW Gothic","URW Gothic L","TeX Gyre Adventor","Jost",system-ui,sans-serif`;
 
 const GRAIN =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")";
@@ -166,6 +182,37 @@ export const PLAYER_CSS = /* css */ `
 .mdp-toast{position:absolute;left:50%;top:22px;transform:translate(-50%,-10px) rotate(-1deg);background:var(--paper-2);color:var(--ink);padding:10px 18px;border:1.5px solid var(--ink);border-radius:10px;
   font:500 17px var(--font-hand);opacity:0;transition:all .35s;pointer-events:none;z-index:6;box-shadow:3px 4px 0 var(--rule)}
 .mdp-toast.is-on{opacity:1;transform:translate(-50%,0) rotate(-1deg)}
+/* ---------- Basalt look ---------- */
+.mdp[data-look=basalt]{--font:${BASALT_FONT};--font-display:var(--font);--font-hand:var(--font);--font-mono:var(--font);--grain:0 !important}
+.mdp[data-look=basalt]::before{display:none}
+.mdp[data-look=basalt][data-paper=light]{--paper:#E6E1D5;--paper-2:#F3F0E8;--card:#F3F0E8;--ink:#1E2422;--ink-soft:#5D635E;--rule:rgba(30,36,34,.10);--rule-line:#CFC8B8;
+  --bone:#E6E1D5;--work:#2E6B7A;--signal:#D4582A;--key:#A8401C;--dark:#1E2422;--panel-1:#2C3431;--panel-2:#2E6B7A;
+  --on-dark:#F3F0E8;--on-dark-muted:#B8BDB6;--on-dark-num:#9DC2CC;--on-dark-rule:rgba(243,240,232,.22);--shadow:none}
+.mdp[data-look=basalt][data-paper=dark]{--paper:#1E2422;--paper-2:#2C3431;--card:#2C3431;--ink:#F3F0E8;--ink-soft:#B8BDB6;--rule:rgba(243,240,232,.10);--rule-line:rgba(243,240,232,.2);
+  --bone:#1E2422;--work:#9DC2CC;--signal:#D4582A;--key:#9DC2CC;--dark:#1E2422;--panel-1:#1E2422;--panel-2:#2E6B7A;
+  --on-dark:#F3F0E8;--on-dark-muted:#B8BDB6;--on-dark-num:#9DC2CC;--on-dark-rule:rgba(243,240,232,.22);--shadow:none}
+.mdp[data-look=basalt][data-theme=guru][data-paper=light]{--paper:#FFFFFF;--paper-2:#FFFFFF;--card:#EDF1F5;--ink:#211D51;--ink-soft:#024059;--rule:rgba(33,29,81,.08);--rule-line:#D6D7D6;
+  --bone:#C3D1DD;--work:#20898F;--signal:#04CAC8;--key:#20898F;--dark:#211D51;--panel-1:#211D51;--panel-2:#20898F;
+  --on-dark:#FFFFFF;--on-dark-muted:#C3D1DD;--on-dark-num:#04CAC8;--on-dark-rule:rgba(255,255,255,.24)}
+.mdp[data-look=basalt][data-theme=guru][data-paper=dark]{--paper:#0B1C56;--paper-2:#211D51;--card:#211D51;--ink:#FFFFFF;--ink-soft:#C3D1DD;--rule:rgba(255,255,255,.08);--rule-line:rgba(255,255,255,.2);
+  --bone:#0B1C56;--work:#04CAC8;--signal:#04CAC8;--key:#FFFFFF;--dark:#0B1C56;--panel-1:#0B1C56;--panel-2:#20898F;
+  --on-dark:#FFFFFF;--on-dark-muted:#C3D1DD;--on-dark-num:#04CAC8;--on-dark-rule:rgba(255,255,255,.24)}
+.mdp[data-theme=basalt]{--c0:#2E6B7A;--c1:#D4582A;--c2:#5E7045;--c3:#9DC2CC;--c4:#D9C7A3}
+.mdp[data-theme=guru]{--c0:#20898F;--c1:#04CAC8;--c2:#7D83AB;--c3:#2E8DD0;--c4:#211D51}
+.mdp[data-theme=guru][data-paper=dark]{--c4:#95C38F}
+.mdp[data-look=basalt]{--accent:var(--signal)}
+.mdp[data-look=basalt] .mdp-svg text{font-family:var(--font);font-weight:400}
+.mdp[data-look=basalt] .mdp-svg text[font-weight="700"]{font-weight:400}
+.mdp[data-look=basalt] .mdp-svg .lbl-mono{font-weight:700;letter-spacing:.14em}
+.mdp[data-look=basalt] .mdp-card{background:var(--card)}
+.mdp[data-look=basalt] .mdp-chrome,.mdp[data-look=basalt] .mdp-mini,.mdp[data-look=basalt] .mdp-toast{border-radius:0;box-shadow:none;border:1px solid var(--rule-line);background:var(--card)}
+.mdp[data-look=basalt] .mdp-chrome button{border-radius:0}
+.mdp[data-look=basalt] .mdp-chrome button[aria-pressed=true]{background:var(--ink);color:var(--card)}
+.mdp[data-look=basalt] .mdp-toast{font:400 15px var(--font);transform:translate(-50%,-10px)}
+.mdp[data-look=basalt] .mdp-toast.is-on{transform:translate(-50%,0)}
+.mdp[data-look=basalt] .mdp-count,.mdp[data-look=basalt] .mdp-remix-label,.mdp[data-look=basalt] .mdp-caption small{font-weight:700;letter-spacing:.12em}
+.mdp[data-look=basalt] .mdp-caption .t{font:400 20px/1.1 var(--font)}
+${BASALT_CARD_CSS}
 @media (max-width:640px){.mdp-mini{width:120px}.mdp-remix-label,.mdp-hide-sm{display:none}.mdp-caption{max-width:60%}}
 @media (prefers-reduced-motion:reduce){.mdp-card,.mdp-token{transition-duration:0s !important}.mdp-twinkle{animation:none}}
 @media print{.mdp-chrome,.mdp-mini,.mdp-toast,.mdp-caption{display:none}}

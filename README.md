@@ -14,6 +14,18 @@ where they are in the bigger picture.
 | ✨ **Constellation** | A night sky. Each section is a constellation and each slide a star. |
 | 🎲 **Game board** | Slides are squares on a snaking board game track. A pawn hops square to square. |
 
+## Look
+
+MapDeck draws everything in **Basalt**, an editorial design system: square corners, hairline rules
+instead of boxes, big light numerals, flat colour, Century Gothic (Jost on the web when Century Gothic
+isn't installed) and one signal mark per slide. Each slide gets a ruled running header with the
+section number and deck name.
+
+- **Colours**: Guru (navy, teal, turquoise; the default) or Basalt (warm paper, glacier, one ember).
+  The older sketch inks are still there too.
+- **Hand-drawn**: the original hand-inked sketchbook look is kept as an option under *Look*
+  in the studio (or say "hand-drawn" in Describe it).
+
 ## Features
 
 - **Import**: `.pptx` (titles, bullets, tables, first picture, speaker notes, PowerPoint sections),
@@ -26,7 +38,7 @@ where they are in the bigger picture.
   morphs to its new spot and the camera stays on the current slide.
 - **Minimap**: overview in the corner showing where you are. Click it to jump.
 - **Studio**: reorder slides by drag and drop or arrows (original order is kept by default, with a
-  one-click reset), edit titles, sections, points and notes, pick theme and pace.
+  one-click reset), edit titles, sections, points and notes, pick look, colours and pace.
 - **Brand kit**: logo, primary and secondary colours, heading and body fonts (Google Fonts).
 - **Presenter view**: second window with speaker notes, up-next, elapsed timer and clock. It drives
   the main window.

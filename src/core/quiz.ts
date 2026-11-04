@@ -1,4 +1,6 @@
-import type { Pace, Paper, StyleId, ThemeId } from "./types";
+import type { Look, Pace, Paper, StyleId, ThemeId } from "./types";
+
+const DEFAULT_THEME: ThemeId = "guru";
 
 export interface QuizOption {
   label: string;
@@ -39,8 +41,10 @@ export const QUIZ: QuizQuestion[] = [
   },
   {
     id: "colour",
-    question: "Pick your inks.",
+    question: "Pick your colours.",
     options: [
+      { label: "Guru", hint: "navy, teal, turquoise", theme: "guru" },
+      { label: "Basalt", hint: "warm paper, glacier, one ember", theme: "basalt" },
       { label: "Field notes", hint: "ochre, cobalt, sage", theme: "field" },
       { label: "Harbour", hint: "sea blue, coral, teal", theme: "harbour" },
       { label: "Orchard", hint: "leaf, plum, apricot", theme: "orchard" },
@@ -73,6 +77,8 @@ export interface QuizResult {
   theme: ThemeId;
   pace: Pace;
   paper?: Paper;
+  /** Set when a description asks for a particular drawing look. */
+  look?: Look;
   /** Words from a description that drove the result, to show back to the user. */
   matched?: string[];
 }
@@ -101,7 +107,7 @@ export function scoreQuiz(answers: number[]): QuizResult {
     }
     if (o.pace) pace = o.pace;
   });
-  return { ranking: rank(scores), theme: colourTheme ?? theme ?? "field", pace };
+  return { ranking: rank(scores), theme: colourTheme ?? theme ?? DEFAULT_THEME, pace };
 }
 
 const STYLE_WORDS: Record<StyleId, string[]> = {
@@ -112,10 +118,16 @@ const STYLE_WORDS: Record<StyleId, string[]> = {
   gameboard: ["game", "games", "play", "playful", "fun", "workshop", "levels", "level up", "milestones", "board game", "challenge", "quest", "team building", "onboarding", "training", "competition", "dice", "gamified"],
 };
 const THEME_WORDS: Record<ThemeId, string[]> = {
+  guru: ["guru", "navy", "teal", "turquoise", "agency", "brand", "branded", "on brand"],
+  basalt: ["editorial", "white label", "white-label", "unbranded", "neutral", "paper", "ember", "glacier", "quiet", "understated"],
   field: ["warm", "earthy", "autumn", "sunny", "golden", "adventure", "explorer", "vintage", "classic", "natural"],
   harbour: ["ocean", "sea", "blue", "coastal", "calm", "fresh", "cool", "water", "nautical", "clean", "space"],
   orchard: ["garden", "nature", "green", "organic", "soft", "gentle", "fruit", "spring", "friendly", "plum", "growth"],
   graphite: ["serious", "corporate", "minimal", "mono", "monochrome", "black", "bold", "dramatic", "sharp", "executive", "board", "red", "noir", "sleek", "slick"],
+};
+const LOOK_WORDS: Record<Look, string[]> = {
+  sketch: ["hand drawn", "hand-drawn", "sketch", "sketchy", "sketched", "doodle", "doodles", "illustrated", "notebook", "inky", "scrapbook", "crafty"],
+  basalt: ["editorial", "clean", "crisp", "minimal", "modern", "corporate", "professional", "polished", "data"],
 };
 const PACE_WORDS: Record<Pace, string[]> = {
   snappy: ["fast", "snappy", "quick", "punchy", "energetic", "high energy", "upbeat", "short", "lightning", "rapid", "tiktok"],
@@ -157,8 +169,9 @@ export function interpretVibe(description: string): QuizResult {
     }
     return top;
   };
-  const theme = best(THEME_WORDS) ?? "field";
+  const theme = best(THEME_WORDS) ?? DEFAULT_THEME;
   const pace = best(PACE_WORDS) ?? "measured";
   const paper = best(PAPER_WORDS);
-  return { ranking: rank(scores), theme, pace, paper, matched: [...matched] };
+  const look = best(LOOK_WORDS);
+  return { ranking: rank(scores), theme, pace, paper, look, matched: [...matched] };
 }

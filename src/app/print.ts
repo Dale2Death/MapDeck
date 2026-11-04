@@ -1,6 +1,7 @@
 import type { Presentation } from "../core/types";
 import { cardClass, cardHtml } from "../player/card";
 import { Player } from "../player/player";
+import { normalizeLook } from "../player/css";
 
 /**
  * Print / save as PDF: page 1 is the full map in the chosen style, then one
@@ -25,11 +26,17 @@ export async function printPresentation(pres: Presentation) {
     page.className = "print-page mdp";
     page.dataset.theme = theme;
     page.dataset.style = style;
+    page.dataset.look = normalizeLook(pres.settings.look);
     page.dataset.paper = "light";
     const card = document.createElement("div");
     card.className = cardClass(s, i) + " print-card";
     card.style.setProperty("--sec", `var(--c${sections.indexOf(s.section) % 5})`);
-    card.innerHTML = cardHtml(s, i + 1, pres.settings.brand?.logo, i);
+    card.innerHTML = cardHtml(s, i + 1, pres.settings.brand?.logo, i, {
+      look: normalizeLook(pres.settings.look),
+      deckTitle: pres.deck.title,
+      sectionIndex: sections.indexOf(s.section),
+      sectionCount: sections.length,
+    });
     page.appendChild(card);
     if (s.notes) {
       const n = document.createElement("div");

@@ -8,6 +8,20 @@ import type { Options } from "roughjs/bin/core";
 
 const gen = rough.generator();
 
+/**
+ * "rough" draws hand-inked lines (the sketch look). "clean" draws exact
+ * geometry with thinner strokes and flat fills (the Basalt look). The player
+ * sets this before it draws, so style layouts don't need to know about looks.
+ */
+export type InkMode = "rough" | "clean";
+let MODE: InkMode = "rough";
+export function setInkMode(m: InkMode) {
+  MODE = m;
+}
+export function inkMode(): InkMode {
+  return MODE;
+}
+
 export interface InkOptions {
   seed?: number;
   /** CSS colour for the line, e.g. "var(--ink)". */
@@ -35,6 +49,23 @@ function toMarkup(drawable: ReturnType<typeof gen.path>, o: InkOptions): string 
   const paths = gen.toPaths(drawable);
   const cls = o.className ? ` class="${o.className}"` : "";
   const op = o.opacity !== undefined ? ` opacity="${o.opacity}"` : "";
+  if (MODE === "clean") {
+    // Hatched fills become a flat tint; solid fills stay solid. Square caps, mitred joins.
+    const tint = o.fill && (o.fillStyle ?? "hachure") !== "solid";
+    let out = "";
+    for (const p of paths) {
+      const isFill = p.fill === F;
+      const strokeColor = p.stroke === S ? o.stroke ?? "var(--ink)" : undefined;
+      const style = [
+        strokeColor && strokeColor !== "none" ? `stroke:${strokeColor}` : "stroke:none",
+        isFill ? `fill:${o.fill}` : "fill:none",
+      ].join(";");
+      const fo = isFill && tint ? ` fill-opacity=".22"` : "";
+      const dash = o.dash && p.stroke === S ? ` stroke-dasharray="${o.dash}"` : "";
+      out += `<path d="${p.d}" style="${style}"${fo} stroke-width="${p.strokeWidth}" stroke-linecap="butt" stroke-linejoin="miter"${dash}/>`;
+    }
+    return `<g${cls}${op}>${out}</g>`;
+  }
   let out = "";
   for (const p of paths) {
     const strokeColor = p.stroke === F ? o.fill : p.stroke === S ? o.stroke ?? "var(--ink)" : undefined;
@@ -50,6 +81,21 @@ function toMarkup(drawable: ReturnType<typeof gen.path>, o: InkOptions): string 
 }
 
 function opts(o: InkOptions): Options {
+  if (MODE === "clean") {
+    return {
+      seed: o.seed ?? 1,
+      stroke: S,
+      strokeWidth: Math.max(1, (o.width ?? 2) * 0.55),
+      roughness: 0,
+      bowing: 0,
+      fill: o.fill ? F : undefined,
+      fillStyle: "solid",
+      disableMultiStroke: true,
+      disableMultiStrokeFill: true,
+      preserveVertices: true,
+      curveFitting: 1,
+    };
+  }
   return {
     seed: o.seed ?? 1,
     stroke: S,
@@ -100,6 +146,8 @@ export function hashSeed(s: string): number {
  * pigment pooling at the edge. No filters, so it stays fast while animating.
  */
 export function wash(cx: number, cy: number, rx: number, ry: number, color: string, seed: number, strength = 1): string {
+  // Basalt keeps the ground flat: sections are told apart by rules and ticks, not washes.
+  if (MODE === "clean") return "";
   const rand = seeded(seed);
   const blob = (scale: number, jitter: number) => {
     const n = 11;

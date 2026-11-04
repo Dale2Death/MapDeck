@@ -1,6 +1,6 @@
 import data from "../generated/doodles.json";
 import type { Slide } from "../core/types";
-import { hashSeed, ink, wash } from "./sketch";
+import { hashSeed, ink, inkMode, wash } from "./sketch";
 
 type Entry = { svg: string; keywords: string[] };
 const DOODLES = data as Record<string, Entry>;
@@ -42,7 +42,7 @@ const cache = new Map<string, string>();
 
 /** Paths for a doodle redrawn with a hand-inked wobble, in a 24×24 box. */
 function inkedPaths(name: string, seed: number, width: number): string {
-  const key = `${name}:${seed}:${width}`;
+  const key = `${inkMode()}:${name}:${seed}:${width}`;
   const hit = cache.get(key);
   if (hit) return hit;
   const entry = DOODLES[name];

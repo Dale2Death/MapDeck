@@ -29,8 +29,13 @@ export interface Deck {
 }
 
 export type StyleId = "journey" | "zoom" | "spider" | "constellation" | "gameboard";
-/** Ink palette: the wash colours used for sections and accents. */
-export type ThemeId = "field" | "harbour" | "orchard" | "graphite";
+/** Colour palette. Guru and Basalt follow the Basalt editorial system; the rest are the sketch inks. */
+export type ThemeId = "guru" | "basalt" | "field" | "harbour" | "orchard" | "graphite";
+/**
+ * How slides and maps are drawn. "basalt": editorial (square, hairline rules,
+ * Century Gothic, flat colour). "sketch": the original hand-inked look.
+ */
+export type Look = "basalt" | "sketch";
 /** Paper: light sketchbook, dark night paper, or follow the device. */
 export type Paper = "auto" | "light" | "dark";
 export type Pace = "snappy" | "measured" | "cinematic";
@@ -49,6 +54,8 @@ export interface BrandKit {
 
 export interface PresentSettings {
   style: StyleId;
+  /** Unset means Basalt. */
+  look?: Look;
   theme: ThemeId;
   paper?: Paper;
   pace: Pace;

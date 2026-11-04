@@ -150,7 +150,7 @@ export function Studio({ pres, onChange, onPresent, onRecord, onQuiz }: Props) {
                         ))}
                       </select>
                     </label>
-                    <label>
+                    {settings.look === "sketch" && <label>
                       <span>Illustration</span>
                       <select value={s.doodle ?? ""} onChange={(e) => updateSlide(s.id, { doodle: e.target.value || undefined })}>
                         <option value="">Auto ({pickDoodle({ ...s, doodle: undefined }, i)?.replace(/-/g, " ")})</option>
@@ -159,7 +159,7 @@ export function Studio({ pres, onChange, onPresent, onRecord, onQuiz }: Props) {
                           <option key={d} value={d}>{d.replace(/-/g, " ")}</option>
                         ))}
                       </select>
-                    </label>
+                    </label>}
                   </>
                   <label>
                     <span>Speaker notes</span>
@@ -233,7 +233,20 @@ export function Studio({ pres, onChange, onPresent, onRecord, onQuiz }: Props) {
             <button className="link small" onClick={onQuiz}>
               <Icon name="sparkles" size={14} /> Not sure? Let us suggest one
             </button>
-            <h3>Inks</h3>
+            <h3>Look</h3>
+            <div className="seg">
+              {(
+                [
+                  ["basalt", "Editorial"],
+                  ["sketch", "Hand-drawn"],
+                ] as const
+              ).map(([l, name]) => (
+                <button key={l} className={(settings.look ?? "basalt") === l ? "on" : ""} onClick={() => setSettings({ look: l })} title={l === "basalt" ? "Basalt: square, hairline rules, flat colour" : "The original hand-inked sketchbook look"}>
+                  {name}
+                </button>
+              ))}
+            </div>
+            <h3>Colours</h3>
             <div className="themes">
               {THEMES.map((t) => (
                 <button key={t.id} className={`theme ${settings.theme === t.id ? "on" : ""}`} onClick={() => setSettings({ theme: t.id })} title={t.name}>

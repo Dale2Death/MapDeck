@@ -1,4 +1,5 @@
-import type { Slide, SlideLayout } from "../core/types";
+import type { Look, Slide, SlideLayout } from "../core/types";
+import { basaltCardHtml, type CardContext } from "./card-basalt";
 import { compareColumns, extractStat, layoutOf, tidy } from "../design/classify";
 import { doodleSvg, pickDoodle } from "../design/doodles";
 import { hashSeed, ink, seeded } from "../design/sketch";
@@ -37,7 +38,8 @@ function titleClass(t: string, base = ""): string {
 }
 
 /** Inner HTML for one slide card (960×540 before scaling). */
-export function cardHtml(s: Slide, number: number, logo?: string, index = number - 1): string {
+export function cardHtml(s: Slide, number: number, logo?: string, index = number - 1, ctx: CardContext & { look?: Look } = {}): string {
+  if ((ctx.look ?? "basalt") === "basalt") return basaltCardHtml(s, number, logo, index, ctx);
   const layout = layoutOf(s, index);
   const seed = hashSeed(s.id);
   const doodleName = pickDoodle(s, index);

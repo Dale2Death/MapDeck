@@ -133,7 +133,7 @@ export function Quiz({ pres, onDone, onSkip }: Props) {
   const heardStyle = r.matched !== undefined && r.ranking[0].score > 0;
   const next: Presentation = {
     ...pres,
-    settings: { ...pres.settings, style, theme: r.theme, pace: r.pace, ...(r.paper ? { paper: r.paper } : {}) },
+    settings: { ...pres.settings, style, theme: r.theme, pace: r.pace, ...(r.paper ? { paper: r.paper } : {}), ...(r.look ? { look: r.look } : {}) },
   };
   return (
     <main className="quiz result">
@@ -144,7 +144,8 @@ export function Quiz({ pres, onDone, onSkip }: Props) {
         </h2>
         <p className="tagline">{def.tagline}.</p>
         <p className="muted small">
-          {THEMES.find((t) => t.id === r.theme)?.name} inks · {r.pace} pace
+          {THEMES.find((t) => t.id === r.theme)?.name} colours · {r.pace} pace
+          {r.look === "sketch" ? " · hand-drawn" : ""}
           {r.paper ? ` · ${r.paper} paper` : ""}
         </p>
         {r.matched && (

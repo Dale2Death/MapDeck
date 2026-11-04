@@ -120,7 +120,7 @@ export function Home({ owner, onDeck }: Props) {
             Turn any deck into a{" "}
             <em>
               journey
-              <Underline seed={11} />
+              <Underline />
             </em>
             .
           </h1>
@@ -144,7 +144,7 @@ export function Home({ owner, onDeck }: Props) {
         <p className="big">You bring the content. We do the design.</p>
         <p>
           Each slide is laid out from what it says. Numbers become big stats, steps become a path, comparisons sit side by
-          side and quotes get room to breathe. Illustrations are drawn from your words, and long slides are split so nothing
+          side and quotes get room to breathe. Long slides are split so nothing
           gets crammed.
         </p>
       </section>

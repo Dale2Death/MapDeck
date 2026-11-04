@@ -9,7 +9,7 @@ import { Quiz } from "./Quiz";
 import { Studio } from "./Studio";
 import { getPref, saveDeck, setPref } from "./storage";
 import { TopBar } from "./TopBar";
-import { normalizeTheme } from "../player/css";
+import { DEFAULT_LOOK, DEFAULT_THEME, normalizeTheme } from "../player/css";
 import "./paper";
 
 /** Older saved decks used theme names that no longer exist. */
@@ -19,7 +19,7 @@ function normalize(p: Presentation | null): Presentation | null {
 
 type View = "home" | "quiz" | "studio" | "present";
 
-export const DEFAULT_SETTINGS: Presentation["settings"] = { style: "journey", theme: "field", paper: "auto", pace: "measured" };
+export const DEFAULT_SETTINGS: Presentation["settings"] = { style: "journey", look: DEFAULT_LOOK, theme: DEFAULT_THEME, paper: "auto", pace: "measured" };
 
 export function App() {
   const [hash, setHash] = useState(location.hash);
